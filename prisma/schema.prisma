@@ -1,0 +1,253 @@
+// Doctors clinic website — data model.
+//
+// Conventions:
+//  * Public-facing rows carry `isActive` / `isPublished`. Public queries filter
+//    on them in the repository layer; admin queries opt in to seeing everything.
+//  * `sortOrder` lets staff control display order without renaming anything.
+//  * `slug` is the public URL segment and is unique per model.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Singleton row describing the clinic itself.
+model ClinicProfile {
+  id             String   @id @default(cuid())
+  name           String
+  tagline        String
+  about          String
+  mission        String?
+  addressLine1   String
+  addressLine2   String?
+  city           String
+  state          String
+  postalCode     String
+  country        String   @default("India")
+  phone          String
+  altPhone       String?
+  email          String
+  mapEmbedUrl    String?
+  emergencyNote  String?
+  /// Hero headline, split so the second half can be set in the accent colour.
+  /// Both fall back to `tagline` when unset.
+  heroTitle      String?
+  heroTitleAccent String?
+  /// Path to the clinic photograph behind the hero, e.g. "/clinic/reception.jpg".
+  /// The hero renders a gradient panel when this is empty.
+  heroImageUrl   String?
+  accreditations String[] @default([])
+  foundedYear    Int?
+  updatedAt      DateTime @updatedAt
+
+  @@map("clinic_profiles")
+}
+
+model OpeningHour {
+  id        String   @id @default(cuid())
+  /// 0 = Sunday … 6 = Saturday
+  dayOfWeek Int      @unique
+  isClosed  Boolean  @default(false)
+  /// 24h "HH:mm". Stored as text because these are wall-clock clinic hours,
+  /// not instants — a DateTime would imply a timezone that does not apply.
+  opensAt   String?
+  closesAt  String?
+  note      String?
+
+  @@map("opening_hours")
+}
+
+model Specialty {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  summary   String?
+  sortOrder Int      @default(0)
+  doctors   Doctor[]
+
+  @@map("specialties")
+}
+
+enum ServiceCategory {
+  CONSULTATION
+  DIAGNOSTICS
+  PROCEDURE
+  PREVENTIVE
+  DENTAL
+}
+
+model Service {
+  id              String          @id @default(cuid())
+  name            String
+  slug            String          @unique
+  summary         String
+  description     String
+  category        ServiceCategory
+  durationMinutes Int?
+  preparation     String?
+  sortOrder       Int             @default(0)
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  doctors      DoctorService[]
+  appointments AppointmentRequest[]
+
+  @@index([isActive, sortOrder])
+  @@map("services")
+}
+
+model Doctor {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  designation     String
+  qualifications  String[] @default([])
+  bio             String
+  photoUrl        String?
+  experienceYears Int
+  languages       String[] @default([])
+  /// Medical council registration number, shown publicly for transparency.
+  registrationNo  String?
+  /// 0 = Sunday … 6 = Saturday
+  consultingDays  Int[]    @default([])
+  consultingHours String?
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  specialtyId String
+  specialty   Specialty @relation(fields: [specialtyId], references: [id])
+
+  services     DoctorService[]
+  appointments AppointmentRequest[]
+
+  @@index([isActive, sortOrder])
+  @@map("doctors")
+}
+
+/// Explicit join so a doctor↔service pairing can be added without a migration
+/// to a implicit relation table.
+model DoctorService {
+  doctorId  String
+  serviceId String
+  doctor    Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([doctorId, serviceId])
+  @@map("doctor_services")
+}
+
+enum FacilityCategory {
+  DIAGNOSTICS
+  TREATMENT
+  PHARMACY
+  AMENITY
+}
+
+/// "What is available in the clinic" — equipment, rooms and patient amenities.
+model Facility {
+  id          String           @id @default(cuid())
+  name        String
+  description String
+  category    FacilityCategory
+  sortOrder   Int              @default(0)
+  isActive    Boolean          @default(true)
+
+  @@index([isActive, sortOrder])
+  @@map("facilities")
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  patientName String
+  /// 1–5, enforced in the service layer.
+  rating      Int
+  quote       String
+  treatment   String?
+  isPublished Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([isPublished, sortOrder])
+  @@map("testimonials")
+}
+
+enum FaqCategory {
+  FIRST_VISIT
+  APPOINTMENTS
+  PAYMENTS
+  FACILITIES
+}
+
+model Faq {
+  id        String      @id @default(cuid())
+  question  String
+  answer    String
+  category  FaqCategory
+  sortOrder Int         @default(0)
+
+  @@index([category, sortOrder])
+  @@map("faqs")
+}
+
+enum PreferredSlot {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum AppointmentStatus {
+  NEW
+  CONTACTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+/// A *request*, not a confirmed booking. Staff call back to confirm, so there
+/// is deliberately no slot-locking or double-booking logic here.
+///
+/// `reason` is patient-supplied health information: never logged, never placed
+/// in a URL, and never included in an error payload. See README → Patient data.
+model AppointmentRequest {
+  id            String            @id @default(cuid())
+  patientName   String
+  phone         String
+  email         String?
+  preferredDate DateTime          @db.Date
+  preferredSlot PreferredSlot
+  reason        String
+  status        AppointmentStatus @default(NEW)
+  staffNote     String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  doctorId  String?
+  doctor    Doctor?  @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("appointment_requests")
+}
+
+enum AdminRole {
+  OWNER
+  STAFF
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         AdminRole @default(STAFF)
+  createdAt    DateTime  @default(now())
+
+  @@map("admin_users")
+}

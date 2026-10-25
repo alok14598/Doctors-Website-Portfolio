@@ -1,0 +1,170 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens.
+ *
+ * Healthcare-template idiom: navy headings over a mid corporate blue, light
+ * blue section fills instead of grey, generous rounding, and pill badges above
+ * headings. The blue is load-bearing here — it is what makes the site read as
+ * a clinic rather than a tech product.
+ *
+ * Light-only by decision: a clinic site is read in daylight on a phone in a
+ * waiting room, and a dark variant would double the contrast surface for no
+ * real benefit.
+ */
+@theme {
+  /* Surfaces — white content on a blue-tinted wash, never neutral grey. */
+  --color-surface: #ffffff;
+  --color-surface-2: #eef4fd;
+  --color-surface-3: #dde9fa;
+  --color-border: #dce8f6;
+  --color-border-strong: #c2d7ee;
+
+  /* Ink — navy, not black. Warmth here would fight the blue. */
+  --color-ink-900: #0f2a47;
+  --color-ink-700: #294866;
+  --color-ink-600: #55687d;
+  --color-ink-400: #8697aa;
+
+  /* The accent carries actions, icons and the highlighted half of a heading. */
+  --color-accent-700: #0f52a8;
+  --color-accent-600: #1668d6;
+  --color-accent-500: #3b92e8;
+  --color-accent-100: #d3e4fa;
+  --color-accent-50: #eaf2fd;
+
+  --color-success-600: #12805a;
+  --color-success-50: #e9f8f2;
+  --color-warning-600: #9a6512;
+  --color-warning-50: #fdf6e9;
+  --color-danger-600: #c4342c;
+  --color-danger-50: #fdf0ef;
+
+  --font-display: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* Rounding is a big part of the friendly read. */
+  --radius-field: 0.75rem;
+  --radius-card: 1.125rem;
+  --radius-panel: 1.75rem;
+  --radius-pill: 980px;
+
+  --shadow-card: 0 1px 2px rgb(15 42 71 / 0.04), 0 8px 24px -16px rgb(15 42 71 / 0.12);
+  --shadow-lift: 0 2px 6px rgb(15 42 71 / 0.06), 0 20px 40px -20px rgb(15 42 71 / 0.22);
+  --shadow-float: 0 12px 40px -12px rgb(15 42 71 / 0.22);
+  --shadow-field: 0 0 0 4px var(--color-accent-100);
+
+  --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-ink-600);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100dvh;
+  }
+
+  /*
+   * Headings are bold and only lightly tracked. The previous pass tracked them
+   * hard, which reads as a tech product; this family wants a friendlier,
+   * more upright setting.
+   */
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-ink-900);
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.18;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  h1 {
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+
+  h3,
+  h4 {
+    line-height: 1.35;
+    letter-spacing: -0.008em;
+  }
+
+  /* One focus treatment everywhere; never removed. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent-600);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-100);
+    color: var(--color-ink-900);
+  }
+
+  /* Motion here is decorative, so it is removed entirely on request. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility prose-clinic {
+  color: var(--color-ink-600);
+  line-height: 1.75;
+
+  & p + p {
+    margin-top: 1.1em;
+  }
+}
+
+/* The highlighted half of a two-tone heading. */
+@utility heading-accent {
+  color: var(--color-accent-600);
+}
+
+/*
+ * Sections ease up into place as they enter the viewport, using a scroll
+ * timeline so there is no JavaScript and no layout shift. Browsers without
+ * `animation-timeline` get the finished state — content is never hidden
+ * behind a script that might not run.
+ */
+@utility reveal {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "name": "doctors-clinic-website",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "postinstall": "prisma generate",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "dotenv -e .env -- vitest run",
+    "test:watch": "dotenv -e .env -- vitest",
+    "test:coverage": "dotenv -e .env -- vitest run --coverage",
+    "test:e2e": "dotenv -e .env.e2e -e .env -- playwright test",
+    "test:e2e:ui": "dotenv -e .env.e2e -e .env -- playwright test --ui",
+    "db:generate": "prisma generate",
+    "db:migrate": "dotenv -e .env -- prisma migrate dev",
+    "db:deploy": "dotenv -e .env -- prisma migrate deploy",
+    "db:reset": "dotenv -e .env -- prisma migrate reset",
+    "db:seed": "dotenv -e .env -- tsx prisma/seed.ts",
+    "db:studio": "dotenv -e .env -- prisma studio",
+    "db:e2e:reset": "dotenv -e .env.e2e -e .env -- tsx scripts/reset-db.ts"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.9.2",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "bcryptjs": "^3.0.3",
+    "next": "16.4.2",
+    "next-auth": "^5.0.0-beta.32",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-hook-form": "^7.90.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@tailwindcss/turbopack": "^4",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "^5.0.5",
+    "dotenv-cli": "^11.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.2",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "prisma": "^7.10.1",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}
